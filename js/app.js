@@ -449,6 +449,7 @@
     $("cli-rut").value = cliente.rut || "";
     $("cli-rubro").value = cliente.rubro || "";
     $("cli-responsable").value = cliente.responsableCalidad || "";
+    $("cli-impl").value = cliente.responsableImplementacion || "";
 
     $("titulo-form-cliente").textContent = `Editar ${cliente.nombre}`;
     $("btn-guardar-cliente").textContent = "Guardar cambios";
@@ -609,6 +610,7 @@
       rut: $("cli-rut").value.trim(),
       rubro: $("cli-rubro").value.trim(),
       responsableCalidad: $("cli-responsable").value.trim(),
+      responsableImplementacion: $("cli-impl").value.trim(),
     };
 
     try {
@@ -794,6 +796,7 @@
       lista.appendChild(item);
     });
 
+    $("informe-elaborado-por").value = cliente.responsableImplementacion || "";
     $("informe-firma-nombre").textContent = cliente.responsableCalidad || "";
     $("informe-elaborado-texto").textContent = $("informe-elaborado-por").value.trim();
 
