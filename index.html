@@ -119,7 +119,7 @@
     <!-- ============ CLIENTES ============ -->
     <div id="vista-clientes" class="vista oculto">
       <section class="tarjeta">
-        <h2>Nuevo cliente</h2>
+        <h2 id="titulo-form-cliente">Nuevo cliente</h2>
         <form id="form-cliente" class="formulario-grid">
           <label>
             <span>Nombre</span>
@@ -138,11 +138,12 @@
             <input type="text" id="cli-rubro" placeholder="Alimentos, servicios, salud…" required>
           </label>
           <label>
-            <span>Responsable de calidad interno</span>
+            <span>Responsable de calidad del cliente</span>
             <input type="text" id="cli-responsable" required>
           </label>
           <div class="acciones">
-            <button type="submit" class="boton-primario">Guardar cliente</button>
+            <button type="button" id="btn-cancelar-edicion" class="boton-fantasma oculto">Cancelar edición</button>
+            <button type="submit" id="btn-guardar-cliente" class="boton-primario">Guardar cliente</button>
           </div>
         </form>
         <p id="cliente-error" class="error" role="alert"></p>
@@ -157,7 +158,7 @@
                 <th>Nombre</th>
                 <th>RUT</th>
                 <th>Rubro</th>
-                <th>Responsable de calidad</th>
+                <th>Responsable de calidad (cliente)</th>
                 <th>Normas</th>
                 <th></th>
               </tr>
@@ -258,6 +259,9 @@
     <div id="vista-informe" class="vista oculto">
       <div class="barra-informe no-imprimir">
         <button type="button" id="btn-volver-informe" class="boton-fantasma">Volver</button>
+        <label class="etiqueta-inline">Elaborado por
+          <input type="text" id="informe-elaborado-por" placeholder="Nombre de quien hace el informe">
+        </label>
         <button type="button" id="btn-imprimir" class="boton-primario">Imprimir o guardar como PDF</button>
       </div>
       <article class="hoja" aria-labelledby="informe-titulo">
@@ -294,7 +298,11 @@
         <footer class="firma">
           <div>
             <span id="informe-firma-nombre"></span>
-            <small>Responsable de calidad</small>
+            <small>Responsable de calidad del cliente</small>
+          </div>
+          <div>
+            <span id="informe-elaborado-texto"></span>
+            <small>Elaborado por</small>
           </div>
         </footer>
       </article>

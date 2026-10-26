@@ -69,6 +69,13 @@ const Persistencia = (() => {
       return demora(nuevo);
     },
 
+    async actualizarCliente(clienteId, cambios) {
+      const cliente = datos.clientes.find((c) => c.id === clienteId);
+      if (!cliente) throw new Error("Cliente no encontrado");
+      Object.assign(cliente, cambios);
+      return demora(cliente);
+    },
+
     // ---------- Normas ----------
     async obtenerNormas() {
       return demora(datos.normas);

@@ -76,6 +76,7 @@
     cumplimiento: [],          // requisitos de la norma con el estado del cliente
     noConformidades: [],
     clienteEditandoId: null,
+    clienteEditandoDatosId: null,
     normaGestionId: null,
   };
 
@@ -382,7 +383,10 @@
       const boton = crear("button", "boton-fantasma", "Normas");
       boton.type = "button";
       boton.addEventListener("click", () => abrirPanelNormas(c));
-      celdaAccion.appendChild(boton);
+      const botonEditar = crear("button", "boton-fantasma", "Editar");
+      botonEditar.type = "button";
+      botonEditar.addEventListener("click", () => editarCliente(c));
+      celdaAccion.append(boton, botonEditar);
       fila.appendChild(celdaAccion);
 
       el.tablaClientes.appendChild(fila);
@@ -437,6 +441,31 @@
       console.error(error);
     }
   }
+
+  function editarCliente(cliente) {
+    estado.clienteEditandoDatosId = cliente.id;
+    $("cli-nombre").value = cliente.nombre || "";
+    $("cli-contacto").value = cliente.contacto || "";
+    $("cli-rut").value = cliente.rut || "";
+    $("cli-rubro").value = cliente.rubro || "";
+    $("cli-responsable").value = cliente.responsableCalidad || "";
+
+    $("titulo-form-cliente").textContent = `Editar ${cliente.nombre}`;
+    $("btn-guardar-cliente").textContent = "Guardar cambios";
+    $("btn-cancelar-edicion").classList.remove("oculto");
+    el.formCliente.scrollIntoView({ behavior: "smooth", block: "center" });
+    $("cli-nombre").focus();
+  }
+
+  function cancelarEdicionCliente() {
+    estado.clienteEditandoDatosId = null;
+    el.formCliente.reset();
+    $("titulo-form-cliente").textContent = "Nuevo cliente";
+    $("btn-guardar-cliente").textContent = "Guardar cliente";
+    $("btn-cancelar-edicion").classList.add("oculto");
+  }
+
+  $("btn-cancelar-edicion").addEventListener("click", cancelarEdicionCliente);
 
   // ---------- Normas ----------
   async function cargarNormas() {
@@ -583,6 +612,15 @@
     };
 
     try {
+      if (estado.clienteEditandoDatosId) {
+        const actualizado = await Persistencia.actualizarCliente(estado.clienteEditandoDatosId, cliente);
+        cancelarEdicionCliente();
+        await cargarClientes();
+        renderClientes();
+        aviso(`Cambios guardados en ${actualizado.nombre}`);
+        return;
+      }
+
       const creado = await Persistencia.crearCliente(cliente);
       el.formCliente.reset();
       await cargarClientes();
@@ -757,6 +795,7 @@
     });
 
     $("informe-firma-nombre").textContent = cliente.responsableCalidad || "";
+    $("informe-elaborado-texto").textContent = $("informe-elaborado-por").value.trim();
 
     mostrarVista("informe");
     window.scrollTo(0, 0);
@@ -764,7 +803,10 @@
 
   $("btn-informe").addEventListener("click", generarInforme);
   $("btn-volver-informe").addEventListener("click", () => mostrarVista("cumplimiento"));
-  $("btn-imprimir").addEventListener("click", () => window.print());
+  $("btn-imprimir").addEventListener("click", () => {
+    $("informe-elaborado-texto").textContent = $("informe-elaborado-por").value.trim();
+    window.print();
+  });
 
   // ---------- Inicio ----------
   el.modo.textContent =

@@ -542,7 +542,9 @@ td input.observacion {
 .datos-cliente dt { color: var(--texto-suave); font-weight: 600; }
 .datos-cliente dd { margin: 0; }
 
-.firma { display: flex; justify-content: flex-end; margin-top: 16px; }
+.firma { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px; margin-top: 16px; }
+.etiqueta-inline { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 550; }
+.etiqueta-inline input { min-width: 240px; }
 .firma div {
   display: grid;
   gap: 2px;
