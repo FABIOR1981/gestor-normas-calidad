@@ -667,6 +667,105 @@
     }
   });
 
+  // ---------- Informe ----------
+  function metricaInforme(valor, etiqueta) {
+    const caja = crear("div", "metrica");
+    caja.appendChild(crear("span", "", String(valor)));
+    caja.appendChild(crear("small", "", etiqueta));
+    return caja;
+  }
+
+  function generarInforme() {
+    const cliente = estado.clientes.find((c) => c.id === estado.clienteId);
+    const norma = estado.normasCliente.find((n) => n.id === estado.normaId);
+    if (!cliente || !norma) {
+      aviso("Elegí un cliente y una norma para generar el informe");
+      return;
+    }
+
+    const contar = (e) => estado.cumplimiento.filter((r) => r.estado === e).length;
+    const aplicables = estado.cumplimiento.length - contar("No aplica");
+    const cumplen = contar("Cumple");
+    const pct = aplicables ? Math.round((cumplen / aplicables) * 100) : 0;
+    const fecha = new Date().toLocaleDateString("es-UY", { day: "2-digit", month: "long", year: "numeric" });
+
+    $("informe-titulo").textContent = `Informe de cumplimiento · ${norma.nombre}`;
+    $("informe-fecha").textContent = `Emitido el ${fecha}`;
+
+    const datos = $("informe-datos");
+    datos.replaceChildren();
+    [
+      ["Cliente", cliente.nombre],
+      ["RUT", cliente.rut],
+      ["Rubro", cliente.rubro],
+      ["Contacto", cliente.contacto],
+      ["Responsable de calidad", cliente.responsableCalidad],
+      ["Norma", norma.version ? `${norma.nombre} (${norma.version})` : norma.nombre],
+    ].forEach(([etiqueta, valor]) => {
+      datos.appendChild(crear("dt", "", etiqueta));
+      datos.appendChild(crear("dd", "", valor || "—"));
+    });
+
+    const resumen = $("informe-resumen");
+    resumen.replaceChildren(
+      metricaInforme(`${pct}%`, "Cumplimiento"),
+      metricaInforme(cumplen, "Cumplen"),
+      metricaInforme(contar("Parcial"), "Parciales"),
+      metricaInforme(contar("No cumple"), "No cumplen"),
+      metricaInforme(contar("Pendiente"), "Pendientes"),
+      metricaInforme(contar("No aplica"), "No aplican")
+    );
+
+    const clases = {
+      "Cumple": "estado-cumple",
+      "Parcial": "estado-parcial",
+      "No cumple": "estado-no-cumple",
+      "No aplica": "estado-no-aplica",
+      "Pendiente": "estado-pendiente",
+    };
+    const tabla = $("informe-tabla");
+    tabla.replaceChildren();
+    if (!estado.cumplimiento.length) {
+      tabla.appendChild(celdaVacia(5, "La norma no tiene requisitos."));
+    }
+    estado.cumplimiento.forEach((r) => {
+      const fila = document.createElement("tr");
+      fila.appendChild(crear("td", "codigo", r.codigo));
+      fila.appendChild(crear("td", "texto-requisito", r.texto));
+      fila.appendChild(crear("td", "", r.responsable));
+      const celdaEstado = document.createElement("td");
+      celdaEstado.appendChild(crear("span", `estado ${clases[r.estado] || ""}`, r.estado));
+      fila.appendChild(celdaEstado);
+      fila.appendChild(crear("td", "", r.observaciones || "—"));
+      tabla.appendChild(fila);
+    });
+
+    const lista = $("informe-nc");
+    lista.replaceChildren();
+    if (!estado.noConformidades.length) {
+      lista.appendChild(crear("li", "meta", "No hay no conformidades abiertas."));
+    }
+    estado.noConformidades.forEach((nc) => {
+      const req = estado.cumplimiento.find((r) => r.id === nc.requisitoId);
+      const item = document.createElement("li");
+      item.appendChild(crear("span", "titulo-nc", nc.descripcion));
+      item.appendChild(crear(
+        "span", "meta",
+        `Requisito ${req ? req.codigo : "—"} · Acción: ${nc.accion || "sin definir"} · Límite: ${formatearFecha(nc.fechaLimite)}`
+      ));
+      lista.appendChild(item);
+    });
+
+    $("informe-firma-nombre").textContent = cliente.responsableCalidad || "";
+
+    mostrarVista("informe");
+    window.scrollTo(0, 0);
+  }
+
+  $("btn-informe").addEventListener("click", generarInforme);
+  $("btn-volver-informe").addEventListener("click", () => mostrarVista("cumplimiento"));
+  $("btn-imprimir").addEventListener("click", () => window.print());
+
   // ---------- Inicio ----------
   el.modo.textContent =
     CONFIG.MODO === "memoria"

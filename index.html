@@ -84,6 +84,7 @@
       <section class="tarjeta">
         <div class="seccion-cabecera">
           <h2>Requisitos</h2>
+          <button type="button" id="btn-informe" class="boton-fantasma">Generar informe</button>
           <input type="search" id="buscar-requisito" placeholder="Buscar por código o texto…" aria-label="Buscar requisito">
         </div>
         <div class="tabla-contenedor">
@@ -252,6 +253,51 @@
           </table>
         </div>
       </section>
+    </div>
+    <!-- ============ INFORME (imprimible) ============ -->
+    <div id="vista-informe" class="vista oculto">
+      <div class="barra-informe no-imprimir">
+        <button type="button" id="btn-volver-informe" class="boton-fantasma">Volver</button>
+        <button type="button" id="btn-imprimir" class="boton-primario">Imprimir o guardar como PDF</button>
+      </div>
+      <article class="hoja" aria-labelledby="informe-titulo">
+        <header class="hoja-cabecera">
+          <h2 id="informe-titulo"></h2>
+          <p id="informe-fecha" class="ayuda"></p>
+        </header>
+        <dl class="datos-cliente" id="informe-datos"></dl>
+        <section>
+          <h3>Resumen</h3>
+          <div class="metricas" id="informe-resumen"></div>
+        </section>
+        <section>
+          <h3>Detalle por requisito</h3>
+          <div class="tabla-contenedor">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Requisito</th>
+                  <th>Responsable</th>
+                  <th>Estado</th>
+                  <th>Observaciones</th>
+                </tr>
+              </thead>
+              <tbody id="informe-tabla"></tbody>
+            </table>
+          </div>
+        </section>
+        <section>
+          <h3>No conformidades abiertas</h3>
+          <ul id="informe-nc" class="lista-nc"></ul>
+        </section>
+        <footer class="firma">
+          <div>
+            <span id="informe-firma-nombre"></span>
+            <small>Responsable de calidad</small>
+          </div>
+        </footer>
+      </article>
     </div>
   </main>
 
