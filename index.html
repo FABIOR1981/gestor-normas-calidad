@@ -23,6 +23,7 @@
       <button type="button" data-vista="cumplimiento" aria-current="page">Cumplimiento</button>
       <button type="button" data-vista="clientes">Clientes</button>
       <button type="button" data-vista="normas">Normas</button>
+      <button type="button" data-vista="auditor">Auditor</button>
     </nav>
     <div class="encabezado-acciones">
       <span id="usuario-actual" class="usuario"></span>
@@ -141,10 +142,6 @@
             <span>Responsable de calidad del cliente</span>
             <input type="text" id="cli-responsable" required>
           </label>
-          <label>
-            <span>Responsable de implementación de la norma <small>(opcional)</small></span>
-            <input type="text" id="cli-impl">
-          </label>
           <div class="acciones">
             <button type="button" id="btn-cancelar-edicion" class="boton-fantasma oculto">Cancelar edición</button>
             <button type="submit" id="btn-guardar-cliente" class="boton-primario">Guardar cliente</button>
@@ -259,6 +256,25 @@
         </div>
       </section>
     </div>
+    <!-- ============ AUDITOR ============ -->
+    <div id="vista-auditor" class="vista oculto">
+      <section class="tarjeta tarjeta-login">
+        <h2>Auditor responsable</h2>
+        <p class="ayuda">Estos datos aparecen en los informes de todos los clientes, como responsable de implementación de la norma.</p>
+        <form id="form-auditor" class="formulario">
+          <label>
+            <span>Nombre y apellido</span>
+            <input type="text" id="auditor-nombre" required>
+          </label>
+          <label>
+            <span>Cargo (opcional)</span>
+            <input type="text" id="auditor-cargo" placeholder="Auditor líder, consultor…">
+          </label>
+          <button type="submit" class="boton-primario">Guardar</button>
+        </form>
+      </section>
+    </div>
+
     <!-- ============ INFORME (imprimible) ============ -->
     <div id="vista-informe" class="vista oculto">
       <div class="barra-informe no-imprimir">

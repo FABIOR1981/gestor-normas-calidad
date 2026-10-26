@@ -47,6 +47,9 @@ const Persistencia = (() => {
     ],
   };
 
+  // Auditor que lleva adelante la implementación de las normas (usuario de la app).
+  let auditor = { nombre: "Shalon Morales", cargo: "" };
+
   let secuencia = 100;
   const nuevoId = (prefijo) => `${prefijo}${++secuencia}`;
   const hoy = () => new Date().toISOString().slice(0, 10);
@@ -74,6 +77,16 @@ const Persistencia = (() => {
       if (!cliente) throw new Error("Cliente no encontrado");
       Object.assign(cliente, cambios);
       return demora(cliente);
+    },
+
+    // ---------- Auditor ----------
+    async obtenerAuditor() {
+      return demora(auditor);
+    },
+
+    async guardarAuditor(cambios) {
+      auditor = { ...auditor, ...cambios };
+      return demora(auditor);
     },
 
     // ---------- Normas ----------

@@ -69,6 +69,7 @@
     vista: "cumplimiento",
     clientes: [],
     normas: [],
+    auditor: { nombre: "", cargo: "" },
     conteoNormas: {},          // clienteId → cantidad de normas asociadas
     clienteId: null,
     normaId: null,
@@ -190,6 +191,7 @@
     if (nombre === "cumplimiento") cargarNormasDelCliente();
     if (nombre === "clientes") renderClientes();
     if (nombre === "normas") renderNormas();
+    if (nombre === "auditor") renderAuditor();
   }
 
   // ---------- Cumplimiento ----------
@@ -449,7 +451,6 @@
     $("cli-rut").value = cliente.rut || "";
     $("cli-rubro").value = cliente.rubro || "";
     $("cli-responsable").value = cliente.responsableCalidad || "";
-    $("cli-impl").value = cliente.responsableImplementacion || "";
 
     $("titulo-form-cliente").textContent = `Editar ${cliente.nombre}`;
     $("btn-guardar-cliente").textContent = "Guardar cambios";
@@ -531,6 +532,7 @@
 
   // ---------- Carga general ----------
   async function cargarTodo() {
+    estado.auditor = await Persistencia.obtenerAuditor();
     await Promise.all([cargarClientes(), cargarNormas()]);
     mostrarVista(estado.vista);
   }
@@ -610,7 +612,6 @@
       rut: $("cli-rut").value.trim(),
       rubro: $("cli-rubro").value.trim(),
       responsableCalidad: $("cli-responsable").value.trim(),
-      responsableImplementacion: $("cli-impl").value.trim(),
     };
 
     try {
@@ -707,6 +708,26 @@
     }
   });
 
+  // ---------- Auditor ----------
+  function renderAuditor() {
+    $("auditor-nombre").value = estado.auditor.nombre || "";
+    $("auditor-cargo").value = estado.auditor.cargo || "";
+  }
+
+  $("form-auditor").addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    try {
+      estado.auditor = await Persistencia.guardarAuditor({
+        nombre: $("auditor-nombre").value.trim(),
+        cargo: $("auditor-cargo").value.trim(),
+      });
+      aviso("Datos del auditor guardados");
+    } catch (error) {
+      aviso("No se pudieron guardar los datos del auditor");
+      console.error(error);
+    }
+  });
+
   // ---------- Informe ----------
   function metricaInforme(valor, etiqueta) {
     const caja = crear("div", "metrica");
@@ -796,7 +817,7 @@
       lista.appendChild(item);
     });
 
-    $("informe-elaborado-por").value = cliente.responsableImplementacion || "";
+    $("informe-elaborado-por").value = estado.auditor.nombre || "";
     $("informe-firma-nombre").textContent = cliente.responsableCalidad || "";
     $("informe-elaborado-texto").textContent = $("informe-elaborado-por").value.trim();
 
