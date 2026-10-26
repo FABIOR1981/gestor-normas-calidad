@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Gestor de normas de calidad: seguimiento de requisitos, cumplimiento y no conformidades.">
+  <title>Gestor de Normas de Calidad</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+  <header class="encabezado">
+    <div class="marca">
+      <span class="marca-icono" aria-hidden="true">✓</span>
+      <div>
+        <h1>Normas de Calidad</h1>
+        <small id="modo-etiqueta">Modo prueba · datos en memoria</small>
+      </div>
+    </div>
+    <div class="encabezado-acciones">
+      <span id="usuario-actual" class="usuario"></span>
+      <button id="btn-salir" class="boton-fantasma oculto" type="button">Salir</button>
+    </div>
+  </header>
+
+  <!-- Pantalla de acceso -->
+  <section id="pantalla-login" class="login">
+    <div class="tarjeta tarjeta-login">
+      <h2>Iniciar sesión</h2>
+      <p class="ayuda">Controlá el cumplimiento de tus normas en un solo lugar.</p>
+      <form id="form-login" class="formulario">
+        <label>
+          <span>Correo</span>
+          <input type="email" id="login-email" placeholder="nombre@empresa.com" autocomplete="username" required>
+        </label>
+        <label>
+          <span>Contraseña</span>
+          <input type="password" id="login-clave" placeholder="••••••••" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="boton-primario boton-ancho">Entrar</button>
+      </form>
+      <p id="login-error" class="error" role="alert"></p>
+    </div>
+  </section>
+
+  <!-- Pantalla principal -->
+  <main id="pantalla-app" class="oculto">
+    <section class="tarjeta tarjeta-resumen">
+      <div class="resumen-cabecera">
+        <div>
+          <label for="selector-norma" class="etiqueta">Norma</label>
+          <select id="selector-norma"></select>
+        </div>
+        <div class="anillo-contenedor" aria-label="Porcentaje de cumplimiento">
+          <svg viewBox="0 0 36 36" class="anillo">
+            <path class="anillo-fondo" d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 1 1 0-31"/>
+            <path id="anillo-progreso" class="anillo-progreso" stroke-dasharray="0, 100" d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 1 1 0-31"/>
+          </svg>
+          <span id="porcentaje">0%</span>
+        </div>
+      </div>
+      <div class="metricas">
+        <div class="metrica"><span id="total-requisitos">0</span><small>Requisitos</small></div>
+        <div class="metrica metrica-ok"><span id="total-cumple">0</span><small>Cumplen</small></div>
+        <div class="metrica metrica-alerta"><span id="total-no-conf">0</span><small>No conformidades abiertas</small></div>
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <div class="seccion-cabecera">
+        <h2>Requisitos</h2>
+        <input type="search" id="buscar-requisito" placeholder="Buscar por código o texto…" aria-label="Buscar requisito">
+      </div>
+      <div class="tabla-contenedor">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Requisito</th>
+              <th>Responsable</th>
+              <th>Estado</th>
+              <th>Observaciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-requisitos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="tarjeta">
+      <h2>Registrar no conformidad</h2>
+      <form id="form-no-conformidad" class="formulario-nc">
+        <select id="nc-requisito" required aria-label="Requisito"></select>
+        <input type="text" id="nc-descripcion" placeholder="Descripción del hallazgo" required>
+        <input type="text" id="nc-accion" placeholder="Acción correctiva propuesta">
+        <input type="date" id="nc-fecha-limite" aria-label="Fecha límite">
+        <button type="submit" class="boton-primario">Registrar</button>
+      </form>
+      <ul id="lista-no-conformidades" class="lista-nc"></ul>
+    </section>
+  </main>
+
+  <div id="avisos" class="avisos" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/persistencia.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
