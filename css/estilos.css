@@ -110,7 +110,7 @@ small { color: var(--texto-suave); }
   height: 34px;
   border-radius: 10px;
   background: linear-gradient(135deg, var(--primario), #7048e8);
-  color: #fff;
+  color: var(--on-primario);
   font-weight: 700;
 }
 
@@ -273,6 +273,11 @@ input[type="file"] {
   border-radius: 10px;
   background: var(--superficie-2);
   font-size: 0.9rem;
+}
+
+::placeholder {
+  color: var(--texto-suave);
+  opacity: 1;
 }
 
 input:focus, select:focus {
