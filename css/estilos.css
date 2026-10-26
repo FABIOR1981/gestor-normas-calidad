@@ -12,13 +12,13 @@
   --primario: #3b5bdb;
   --primario-hover: #3149b8;
   --primario-suave: #e8edff;
-  --ok: #2f9e44;
+  --ok: #237a34;
   --ok-suave: #e6f6ea;
-  --alerta: #e8590c;
+  --alerta: #b04a0c;
   --alerta-suave: #fff1e6;
   --peligro: #c92a2a;
   --peligro-suave: #fdecec;
-  --neutro: #868e96;
+  --neutro: #4f5661;
   --neutro-suave: #eef0f3;
   --radio: 14px;
   --sombra: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 16px rgba(16, 24, 40, 0.06);
@@ -40,6 +40,10 @@
     --alerta-suave: #3a2416;
     --peligro-suave: #3a1c1c;
     --neutro-suave: #222833;
+    --ok: #7bd88f;
+    --alerta: #ffa94d;
+    --peligro: #ff8787;
+    --neutro: #adb5bd;
     --sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
   }
 }
