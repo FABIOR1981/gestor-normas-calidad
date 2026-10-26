@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Gestor de normas de calidad: seguimiento de requisitos, cumplimiento y no conformidades.">
+  <meta name="description" content="Gestor de normas de calidad: clientes, normas y seguimiento de cumplimiento.">
   <title>Gestor de Normas de Calidad</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,6 +19,11 @@
         <small id="modo-etiqueta">Modo prueba · datos en memoria</small>
       </div>
     </div>
+    <nav class="navegacion oculto" id="navegacion" aria-label="Secciones">
+      <button type="button" data-vista="cumplimiento" aria-current="page">Cumplimiento</button>
+      <button type="button" data-vista="clientes">Clientes</button>
+      <button type="button" data-vista="normas">Normas</button>
+    </nav>
     <div class="encabezado-acciones">
       <span id="usuario-actual" class="usuario"></span>
       <button id="btn-salir" class="boton-fantasma oculto" type="button">Salir</button>
@@ -29,7 +34,7 @@
   <section id="pantalla-login" class="login">
     <div class="tarjeta tarjeta-login">
       <h2>Iniciar sesión</h2>
-      <p class="ayuda">Controlá el cumplimiento de tus normas en un solo lugar.</p>
+      <p class="ayuda">Controlá el cumplimiento de las normas de tus clientes en un solo lugar.</p>
       <form id="form-login" class="formulario">
         <label>
           <span>Correo</span>
@@ -45,65 +50,214 @@
     </div>
   </section>
 
-  <!-- Pantalla principal -->
   <main id="pantalla-app" class="oculto">
-    <section class="tarjeta tarjeta-resumen">
-      <div class="resumen-cabecera">
-        <div>
-          <label for="selector-norma" class="etiqueta">Norma</label>
-          <select id="selector-norma"></select>
-        </div>
-        <div class="anillo-contenedor" aria-label="Porcentaje de cumplimiento">
-          <svg viewBox="0 0 36 36" class="anillo">
-            <path class="anillo-fondo" d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 1 1 0-31"/>
-            <path id="anillo-progreso" class="anillo-progreso" stroke-dasharray="0, 100" d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 1 1 0-31"/>
-          </svg>
-          <span id="porcentaje">0%</span>
-        </div>
-      </div>
-      <div class="metricas">
-        <div class="metrica"><span id="total-requisitos">0</span><small>Requisitos</small></div>
-        <div class="metrica metrica-ok"><span id="total-cumple">0</span><small>Cumplen</small></div>
-        <div class="metrica metrica-alerta"><span id="total-no-conf">0</span><small>No conformidades abiertas</small></div>
-      </div>
-    </section>
 
-    <section class="tarjeta">
-      <div class="seccion-cabecera">
-        <h2>Requisitos</h2>
-        <input type="search" id="buscar-requisito" placeholder="Buscar por código o texto…" aria-label="Buscar requisito">
-      </div>
-      <div class="tabla-contenedor">
-        <table>
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Requisito</th>
-              <th>Responsable</th>
-              <th>Estado</th>
-              <th>Observaciones</th>
-            </tr>
-          </thead>
-          <tbody id="tabla-requisitos"></tbody>
-        </table>
-      </div>
-    </section>
+    <!-- ============ CUMPLIMIENTO ============ -->
+    <div id="vista-cumplimiento" class="vista">
+      <section class="tarjeta tarjeta-resumen">
+        <div class="resumen-cabecera">
+          <div class="selectores">
+            <div>
+              <label for="selector-cliente" class="etiqueta">Cliente</label>
+              <select id="selector-cliente"></select>
+            </div>
+            <div>
+              <label for="selector-norma" class="etiqueta">Norma</label>
+              <select id="selector-norma"></select>
+            </div>
+          </div>
+          <div class="anillo-contenedor" aria-label="Porcentaje de cumplimiento">
+            <svg viewBox="0 0 36 36" class="anillo" aria-hidden="true">
+              <path class="anillo-fondo" d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 1 1 0-31"/>
+              <path id="anillo-progreso" class="anillo-progreso" stroke-dasharray="0, 100" d="M18 2.5a15.5 15.5 0 1 1 0 31 15.5 15.5 0 1 1 0-31"/>
+            </svg>
+            <span id="porcentaje">0%</span>
+          </div>
+        </div>
+        <div class="metricas">
+          <div class="metrica"><span id="total-requisitos">0</span><small>Requisitos</small></div>
+          <div class="metrica metrica-ok"><span id="total-cumple">0</span><small>Cumplen</small></div>
+          <div class="metrica metrica-alerta"><span id="total-no-conf">0</span><small>No conformidades abiertas</small></div>
+        </div>
+      </section>
 
-    <section class="tarjeta">
-      <h2>Registrar no conformidad</h2>
-      <form id="form-no-conformidad" class="formulario-nc">
-        <select id="nc-requisito" required aria-label="Requisito"></select>
-        <input type="text" id="nc-descripcion" placeholder="Descripción del hallazgo" required>
-        <input type="text" id="nc-accion" placeholder="Acción correctiva propuesta">
-        <input type="date" id="nc-fecha-limite" aria-label="Fecha límite">
-        <button type="submit" class="boton-primario">Registrar</button>
-      </form>
-      <ul id="lista-no-conformidades" class="lista-nc"></ul>
-    </section>
+      <section class="tarjeta">
+        <div class="seccion-cabecera">
+          <h2>Requisitos</h2>
+          <input type="search" id="buscar-requisito" placeholder="Buscar por código o texto…" aria-label="Buscar requisito">
+        </div>
+        <div class="tabla-contenedor">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Requisito</th>
+                <th>Responsable</th>
+                <th>Estado</th>
+                <th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-requisitos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="tarjeta">
+        <h2>Registrar no conformidad</h2>
+        <form id="form-no-conformidad" class="formulario-nc">
+          <select id="nc-requisito" required aria-label="Requisito"></select>
+          <input type="text" id="nc-descripcion" placeholder="Descripción del hallazgo" required>
+          <input type="text" id="nc-accion" placeholder="Acción correctiva propuesta">
+          <input type="date" id="nc-fecha-limite" aria-label="Fecha límite">
+          <button type="submit" class="boton-primario">Registrar</button>
+        </form>
+        <ul id="lista-no-conformidades" class="lista-nc"></ul>
+      </section>
+    </div>
+
+    <!-- ============ CLIENTES ============ -->
+    <div id="vista-clientes" class="vista oculto">
+      <section class="tarjeta">
+        <h2>Nuevo cliente</h2>
+        <form id="form-cliente" class="formulario-grid">
+          <label>
+            <span>Nombre</span>
+            <input type="text" id="cli-nombre" required>
+          </label>
+          <label>
+            <span>Contacto</span>
+            <input type="text" id="cli-contacto" placeholder="Nombre y teléfono o correo" required>
+          </label>
+          <label>
+            <span>RUT</span>
+            <input type="text" id="cli-rut" inputmode="numeric" pattern="\d{12}" title="12 dígitos, sin guiones" placeholder="210000000010" required>
+          </label>
+          <label>
+            <span>Rubro</span>
+            <input type="text" id="cli-rubro" placeholder="Alimentos, servicios, salud…" required>
+          </label>
+          <label>
+            <span>Responsable de calidad interno</span>
+            <input type="text" id="cli-responsable" required>
+          </label>
+          <div class="acciones">
+            <button type="submit" class="boton-primario">Guardar cliente</button>
+          </div>
+        </form>
+        <p id="cliente-error" class="error" role="alert"></p>
+      </section>
+
+      <section class="tarjeta">
+        <h2>Clientes</h2>
+        <div class="tabla-contenedor">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>RUT</th>
+                <th>Rubro</th>
+                <th>Responsable de calidad</th>
+                <th>Normas</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tabla-clientes"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="panel-normas-cliente" class="tarjeta oculto">
+        <div class="seccion-cabecera">
+          <div>
+            <h2 id="titulo-panel-cliente">Normas del cliente</h2>
+            <small>Un cliente puede tener varias normas, y una norma puede aplicar a varios clientes.</small>
+          </div>
+        </div>
+        <div id="lista-normas-check" class="lista-check"></div>
+        <div class="acciones acciones-derecha">
+          <button type="button" id="btn-cancelar-normas" class="boton-fantasma">Cancelar</button>
+          <button type="button" id="btn-guardar-normas" class="boton-primario">Guardar normas</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ NORMAS ============ -->
+    <div id="vista-normas" class="vista oculto">
+      <div class="dos-columnas">
+        <section class="tarjeta">
+          <h2>Nueva norma</h2>
+          <form id="form-norma" class="formulario">
+            <label>
+              <span>Nombre</span>
+              <input type="text" id="norma-nombre" placeholder="ISO 9001:2015" required>
+            </label>
+            <label>
+              <span>Versión o año</span>
+              <input type="text" id="norma-version" placeholder="2015">
+            </label>
+            <button type="submit" class="boton-primario">Crear norma</button>
+          </form>
+
+          <hr class="separador">
+
+          <h2>Importar desde archivo</h2>
+          <p class="ayuda ayuda-corta">Archivo CSV o Excel con las columnas <strong>codigo</strong>, <strong>requisito</strong> y <strong>responsable</strong>. La primera fila puede ser de encabezado.</p>
+          <form id="form-importar" class="formulario">
+            <label>
+              <span>Nombre de la norma</span>
+              <input type="text" id="importar-nombre" required>
+            </label>
+            <label>
+              <span>Versión o año</span>
+              <input type="text" id="importar-version">
+            </label>
+            <label>
+              <span>Archivo (.csv o .xlsx)</span>
+              <input type="file" id="importar-archivo" accept=".csv,.xlsx" required>
+            </label>
+            <button type="submit" class="boton-primario">Importar</button>
+          </form>
+          <p id="importar-error" class="error" role="alert"></p>
+        </section>
+
+        <section class="tarjeta">
+          <h2>Normas cargadas</h2>
+          <ul id="lista-normas" class="lista-normas"></ul>
+        </section>
+      </div>
+
+      <section id="panel-norma" class="tarjeta oculto">
+        <div class="seccion-cabecera">
+          <div>
+            <h2 id="titulo-norma">Norma</h2>
+            <small id="subtitulo-norma"></small>
+          </div>
+          <form id="form-requisito" class="formulario-requisito">
+            <input type="text" id="req-codigo" placeholder="Código" required aria-label="Código">
+            <input type="text" id="req-texto" placeholder="Texto del requisito" required aria-label="Texto del requisito">
+            <input type="text" id="req-responsable" placeholder="Responsable" aria-label="Responsable">
+            <button type="submit" class="boton-primario">Agregar</button>
+          </form>
+        </div>
+        <div class="tabla-contenedor">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Requisito</th>
+                <th>Responsable</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-requisitos-norma"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </main>
 
   <div id="avisos" class="avisos" aria-live="polite"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/persistencia.js"></script>
   <script src="js/app.js"></script>

@@ -36,14 +36,14 @@
     --primario: #748ffc;
     --primario-hover: #91a7ff;
     --primario-suave: #232d4d;
-    --ok-suave: #173322;
-    --alerta-suave: #3a2416;
-    --peligro-suave: #3a1c1c;
-    --neutro-suave: #222833;
     --ok: #7bd88f;
+    --ok-suave: #173322;
     --alerta: #ffa94d;
+    --alerta-suave: #3a2416;
     --peligro: #ff8787;
+    --peligro-suave: #3a1c1c;
     --neutro: #adb5bd;
+    --neutro-suave: #222833;
     --sombra: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
   }
 }
@@ -65,12 +65,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2 { margin: 0; letter-spacing: -0.01em; }
+h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
 h2 { font-size: 1.05rem; font-weight: 650; }
 small { color: var(--texto-suave); }
 .ayuda { color: var(--texto-suave); margin: 4px 0 20px; }
+.ayuda-corta { margin: 0 0 12px; font-size: 0.9rem; }
 .error { color: var(--peligro); min-height: 1.4em; margin: 12px 0 0; }
 .oculto { display: none !important; }
+.separador { border: 0; border-top: 1px solid var(--borde); margin: 22px 0; }
 
 :focus-visible {
   outline: 2px solid var(--primario);
@@ -78,7 +80,7 @@ small { color: var(--texto-suave); }
 }
 
 /* ==========================================================
-   Encabezado
+   Encabezado y navegación
    ========================================================== */
 .encabezado {
   position: sticky;
@@ -87,8 +89,9 @@ small { color: var(--texto-suave); }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  padding: 14px clamp(16px, 4vw, 32px);
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding: 12px clamp(16px, 4vw, 32px);
   background: color-mix(in srgb, var(--superficie) 85%, transparent);
   backdrop-filter: saturate(160%) blur(10px);
   border-bottom: 1px solid var(--borde);
@@ -109,6 +112,30 @@ small { color: var(--texto-suave); }
   font-weight: 700;
 }
 
+.navegacion {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--superficie-2);
+  border-radius: 12px;
+}
+.navegacion button {
+  border: 0;
+  background: transparent;
+  color: var(--texto-suave);
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.navegacion button:hover { color: var(--texto); }
+.navegacion button[aria-current="page"] {
+  background: var(--superficie);
+  color: var(--primario);
+  box-shadow: var(--sombra);
+}
+
 .encabezado-acciones { display: flex; align-items: center; gap: 12px; }
 .usuario { font-size: 0.85rem; color: var(--texto-suave); }
 
@@ -126,15 +153,15 @@ small { color: var(--texto-suave); }
 .tarjeta-login h2 { font-size: 1.4rem; }
 
 /* ==========================================================
-   Layout principal y tarjetas
+   Layout y tarjetas
    ========================================================== */
 main {
   max-width: 1120px;
   margin: 0 auto;
   padding: 24px clamp(16px, 4vw, 32px) 48px;
-  display: grid;
-  gap: 20px;
 }
+
+.vista { display: grid; gap: 20px; }
 
 .tarjeta {
   background: var(--superficie);
@@ -142,6 +169,13 @@ main {
   border-radius: var(--radio);
   padding: 22px;
   box-shadow: var(--sombra);
+}
+
+.dos-columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
 }
 
 .tarjeta-resumen { display: grid; gap: 22px; }
@@ -154,6 +188,13 @@ main {
   flex-wrap: wrap;
 }
 
+.selectores {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.selectores > div { min-width: 240px; flex: 1; }
+
 .etiqueta {
   display: block;
   font-size: 0.8rem;
@@ -164,11 +205,9 @@ main {
   letter-spacing: 0.04em;
 }
 
-.resumen-cabecera select { min-width: 280px; }
-
 /* Anillo de cumplimiento */
 .anillo-contenedor { position: relative; width: 96px; height: 96px; }
-.anillo { width: 100%; height: 100%; transform: rotate(0deg); }
+.anillo { width: 100%; height: 100%; }
 .anillo-fondo, .anillo-progreso { fill: none; stroke-width: 3; }
 .anillo-fondo { stroke: var(--superficie-2); }
 .anillo-progreso {
@@ -190,6 +229,7 @@ main {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 12px;
+  margin-top: 18px;
 }
 .metrica {
   background: var(--superficie-2);
@@ -224,14 +264,37 @@ select {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+input[type="file"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed var(--borde);
+  border-radius: 10px;
+  background: var(--superficie-2);
+  font-size: 0.9rem;
+}
+
 input:focus, select:focus {
   outline: none;
   border-color: var(--primario);
   box-shadow: 0 0 0 4px var(--primario-suave);
 }
 
+select:disabled, input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .formulario { display: grid; gap: 14px; }
 .formulario label { display: grid; gap: 6px; font-size: 0.88rem; font-weight: 550; }
+
+.formulario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+.formulario-grid label { display: grid; gap: 6px; font-size: 0.88rem; font-weight: 550; }
+.formulario-grid .acciones { grid-column: 1 / -1; }
 
 .formulario-nc {
   display: grid;
@@ -239,6 +302,18 @@ input:focus, select:focus {
   gap: 10px;
   align-items: center;
 }
+
+.formulario-requisito {
+  display: grid;
+  grid-template-columns: 0.6fr 2fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.acciones { display: flex; gap: 10px; align-items: center; }
+.acciones-derecha { justify-content: flex-end; margin-top: 18px; }
 
 .boton-primario, .boton-fantasma {
   cursor: pointer;
@@ -258,12 +333,13 @@ input:focus, select:focus {
 .boton-fantasma {
   background: transparent;
   border: 1px solid var(--borde);
+  padding: 8px 14px;
 }
 .boton-fantasma:hover { background: var(--superficie-2); }
 .boton-ancho { width: 100%; }
 
 /* ==========================================================
-   Tabla de requisitos
+   Tablas
    ========================================================== */
 .seccion-cabecera {
   display: flex;
@@ -296,7 +372,7 @@ tbody tr:hover { background: var(--superficie-2); }
 td.texto-requisito { min-width: 260px; }
 td.codigo { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 
-/* Estado: píldora con punto de color, sin bordes laterales */
+/* Estado: píldora con punto de color */
 .estado {
   display: inline-flex;
   align-items: center;
@@ -330,12 +406,50 @@ td input.observacion {
   font-size: 0.88rem;
 }
 
-/* Fila vacía */
 .vacio { text-align: center; color: var(--texto-suave); padding: 32px 0; }
+
+/* ==========================================================
+   Asociación cliente ↔ normas
+   ========================================================== */
+.lista-check { display: grid; gap: 8px; margin-top: 14px; }
+.opcion-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.opcion-check:hover { background: var(--superficie-2); }
+.opcion-check input { width: 18px; height: 18px; accent-color: var(--primario); }
+
+/* ==========================================================
+   Lista de normas
+   ========================================================== */
+.lista-normas { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.norma-item {
+  width: 100%;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: 12px 14px;
+  background: var(--superficie-2);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.norma-item:hover { border-color: var(--borde); }
+.norma-item[aria-current="true"] { border-color: var(--primario); background: var(--primario-suave); }
+.norma-item .titulo-nc { font-weight: 600; color: var(--texto); }
 
 /* ==========================================================
    No conformidades
    ========================================================== */
+.formulario-nc .boton-primario { white-space: nowrap; }
+
 .lista-nc { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 10px; }
 .lista-nc li {
   background: var(--superficie-2);
@@ -348,7 +462,7 @@ td input.observacion {
 .lista-nc .meta { font-size: 0.82rem; color: var(--texto-suave); }
 
 /* ==========================================================
-   Avisos (toasts)
+   Avisos
    ========================================================== */
 .avisos {
   position: fixed;
@@ -376,14 +490,19 @@ td input.observacion {
    Responsive
    ========================================================== */
 @media (max-width: 900px) {
+  .dos-columnas { grid-template-columns: 1fr; }
   .formulario-nc { grid-template-columns: 1fr 1fr; }
   .formulario-nc button { grid-column: 1 / -1; }
+  .formulario-requisito { grid-template-columns: 1fr 1fr; }
+  .formulario-requisito button { grid-column: 1 / -1; }
 }
 
 @media (max-width: 640px) {
   .encabezado-acciones .usuario { display: none; }
-  .resumen-cabecera select { min-width: 0; width: 100%; }
-  .formulario-nc { grid-template-columns: 1fr; }
+  .navegacion { width: 100%; justify-content: space-between; }
+  .navegacion button { flex: 1; padding: 8px 6px; font-size: 0.9rem; }
+  .selectores > div { min-width: 0; width: 100%; }
+  .formulario-nc, .formulario-requisito { grid-template-columns: 1fr; }
   th:nth-child(3), td:nth-child(3) { display: none; }
   td.texto-requisito { min-width: 0; }
 }

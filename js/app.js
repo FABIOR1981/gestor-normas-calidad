@@ -4,15 +4,21 @@
   // ---------- Referencias al DOM ----------
   const $ = (id) => document.getElementById(id);
   const el = {
+    // Login y encabezado
     login: $("pantalla-login"),
     formLogin: $("form-login"),
     loginEmail: $("login-email"),
     loginClave: $("login-clave"),
     loginError: $("login-error"),
     app: $("pantalla-app"),
+    navegacion: $("navegacion"),
     btnSalir: $("btn-salir"),
     usuario: $("usuario-actual"),
     modo: $("modo-etiqueta"),
+    avisos: $("avisos"),
+
+    // Cumplimiento
+    selectorCliente: $("selector-cliente"),
     selectorNorma: $("selector-norma"),
     buscar: $("buscar-requisito"),
     totalReq: $("total-requisitos"),
@@ -27,24 +33,50 @@
     ncAccion: $("nc-accion"),
     ncFecha: $("nc-fecha-limite"),
     listaNc: $("lista-no-conformidades"),
-    avisos: $("avisos"),
+
+    // Clientes
+    formCliente: $("form-cliente"),
+    tablaClientes: $("tabla-clientes"),
+    panelNormasCliente: $("panel-normas-cliente"),
+    tituloPanelCliente: $("titulo-panel-cliente"),
+    listaNormasCheck: $("lista-normas-check"),
+    btnGuardarNormas: $("btn-guardar-normas"),
+    btnCancelarNormas: $("btn-cancelar-normas"),
+
+    // Normas
+    formNorma: $("form-norma"),
+    normaNombre: $("norma-nombre"),
+    normaVersion: $("norma-version"),
+    formImportar: $("form-importar"),
+    importarNombre: $("importar-nombre"),
+    importarVersion: $("importar-version"),
+    importarArchivo: $("importar-archivo"),
+    importarError: $("importar-error"),
+    listaNormas: $("lista-normas"),
+    panelNorma: $("panel-norma"),
+    tituloNorma: $("titulo-norma"),
+    subtituloNorma: $("subtitulo-norma"),
+    formRequisito: $("form-requisito"),
+    reqCodigo: $("req-codigo"),
+    reqTexto: $("req-texto"),
+    reqResponsable: $("req-responsable"),
+    tablaRequisitosNorma: $("tabla-requisitos-norma"),
   };
 
   // ---------- Estado ----------
   const estado = {
     usuario: null,
+    vista: "cumplimiento",
+    clientes: [],
     normas: [],
+    conteoNormas: {},          // clienteId → cantidad de normas asociadas
+    clienteId: null,
     normaId: null,
-    requisitos: [],
+    normasCliente: [],         // normas asociadas al cliente seleccionado
+    cumplimiento: [],          // requisitos de la norma con el estado del cliente
     noConformidades: [],
-  };
-
-  const claseEstado = {
-    "Cumple": "estado-cumple",
-    "Parcial": "estado-parcial",
-    "No cumple": "estado-no-cumple",
-    "No aplica": "estado-no-aplica",
-    "Pendiente": "estado-pendiente",
+    clienteEditandoId: null,
+    normaGestionId: null,
   };
 
   // ---------- Utilidades ----------
@@ -63,15 +95,74 @@
     return nodo;
   }
 
+  function celdaVacia(colspan, texto) {
+    const fila = document.createElement("tr");
+    const celda = crear("td", "vacio", texto);
+    celda.colSpan = colspan;
+    fila.appendChild(celda);
+    return fila;
+  }
+
   function formatearFecha(iso) {
     if (!iso) return "Sin fecha";
     const [a, m, d] = iso.split("-");
     return `${d}/${m}/${a}`;
   }
 
-  // ---------- Vistas ----------
+  // ---------- Archivos (CSV y Excel) ----------
+  function parseLinea(linea, separador) {
+    const celdas = [];
+    let actual = "";
+    let entreComillas = false;
+    for (let i = 0; i < linea.length; i++) {
+      const c = linea[i];
+      if (c === '"') {
+        if (entreComillas && linea[i + 1] === '"') { actual += '"'; i++; }
+        else entreComillas = !entreComillas;
+      } else if (c === separador && !entreComillas) {
+        celdas.push(actual);
+        actual = "";
+      } else {
+        actual += c;
+      }
+    }
+    celdas.push(actual);
+    return celdas.map((s) => s.trim());
+  }
+
+  async function leerFilas(archivo) {
+    if (/\.xlsx$/i.test(archivo.name)) {
+      if (typeof XLSX === "undefined") throw new Error("No se pudo cargar el lector de Excel. Usá un CSV.");
+      const libro = XLSX.read(await archivo.arrayBuffer(), { type: "array" });
+      const hoja = libro.Sheets[libro.SheetNames[0]];
+      return XLSX.utils.sheet_to_json(hoja, { header: 1, defval: "" });
+    }
+
+    const texto = await archivo.text();
+    const lineas = texto.split(/\r?\n/).filter((l) => l.trim() !== "");
+    if (!lineas.length) return [];
+    const separador = lineas[0].split(";").length > lineas[0].split(",").length ? ";" : ",";
+    return lineas.map((l) => parseLinea(l, separador));
+  }
+
+  function filasARequisitos(filas) {
+    const normalizar = (s) => String(s ?? "").trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const primera = filas[0] ? normalizar(filas[0][0]) : "";
+    const datos = primera === "codigo" ? filas.slice(1) : filas;
+
+    return datos
+      .map((f) => ({
+        codigo: String(f[0] ?? "").trim(),
+        texto: String(f[1] ?? "").trim(),
+        responsable: String(f[2] ?? "").trim(),
+      }))
+      .filter((r) => r.codigo && r.texto);
+  }
+
+  // ---------- Vistas generales ----------
   function mostrarLogin() {
     el.app.classList.add("oculto");
+    el.navegacion.classList.add("oculto");
     el.login.classList.remove("oculto");
     el.btnSalir.classList.add("oculto");
     el.usuario.textContent = "";
@@ -80,63 +171,79 @@
   function mostrarApp() {
     el.login.classList.add("oculto");
     el.app.classList.remove("oculto");
+    el.navegacion.classList.remove("oculto");
     el.btnSalir.classList.remove("oculto");
     el.usuario.textContent = estado.usuario;
   }
 
-  // ---------- Renderizado ----------
+  function mostrarVista(nombre) {
+    estado.vista = nombre;
+    document.querySelectorAll(".vista").forEach((v) => {
+      v.classList.toggle("oculto", v.id !== `vista-${nombre}`);
+    });
+    el.navegacion.querySelectorAll("button").forEach((b) => {
+      if (b.dataset.vista === nombre) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
+    });
+
+    if (nombre === "cumplimiento") cargarNormasDelCliente();
+    if (nombre === "clientes") renderClientes();
+    if (nombre === "normas") renderNormas();
+  }
+
+  // ---------- Cumplimiento ----------
   function renderResumen() {
-    const total = estado.requisitos.length;
-    const cumplen = estado.requisitos.filter((r) => r.estado === "Cumple").length;
-    const aplicables = estado.requisitos.filter((r) => r.estado !== "No aplica").length;
-    const abiertas = estado.noConformidades.length;
+    const total = estado.cumplimiento.length;
+    const cumplen = estado.cumplimiento.filter((r) => r.estado === "Cumple").length;
+    const aplicables = estado.cumplimiento.filter((r) => r.estado !== "No aplica").length;
     const pct = aplicables ? Math.round((cumplen / aplicables) * 100) : 0;
 
     el.totalReq.textContent = total;
     el.totalCumple.textContent = cumplen;
-    el.totalNc.textContent = abiertas;
+    el.totalNc.textContent = estado.noConformidades.length;
     el.porcentaje.textContent = `${pct}%`;
     el.anillo.setAttribute("stroke-dasharray", `${pct}, 100`);
   }
 
-  function renderTabla() {
-    const texto = el.buscar.value.trim().toLowerCase();
-    const filtrados = estado.requisitos.filter(
-      (r) => !texto || r.codigo.toLowerCase().includes(texto) || r.texto.toLowerCase().includes(texto)
-    );
-
+  function renderTablaCumplimiento() {
     el.tabla.replaceChildren();
 
-    if (!filtrados.length) {
-      const fila = document.createElement("tr");
-      const celda = crear("td", "vacio", "No hay requisitos que coincidan con la búsqueda.");
-      celda.colSpan = 5;
-      fila.appendChild(celda);
-      el.tabla.appendChild(fila);
+    if (!estado.normasCliente.length) {
+      el.tabla.appendChild(celdaVacia(5, "Este cliente no tiene normas asociadas. Asociálas desde la pestaña Clientes."));
+      return;
+    }
+    if (!estado.normaId) {
+      el.tabla.appendChild(celdaVacia(5, "Seleccioná una norma."));
       return;
     }
 
-    filtrados.forEach((req) => {
-      const fila = document.createElement("tr");
+    const texto = el.buscar.value.trim().toLowerCase();
+    const filas = estado.cumplimiento.filter(
+      (r) => !texto || r.codigo.toLowerCase().includes(texto) || r.texto.toLowerCase().includes(texto)
+    );
 
+    if (!filas.length) {
+      el.tabla.appendChild(celdaVacia(5, "No hay requisitos que coincidan con la búsqueda."));
+      return;
+    }
+
+    filas.forEach((req) => {
+      const fila = document.createElement("tr");
       fila.appendChild(crear("td", "codigo", req.codigo));
       fila.appendChild(crear("td", "texto-requisito", req.texto));
       fila.appendChild(crear("td", "", req.responsable));
 
-      // Estado: selector + píldora visual
       const celdaEstado = document.createElement("td");
       const selector = document.createElement("select");
       selector.className = "selector-estado";
       selector.setAttribute("aria-label", `Estado del requisito ${req.codigo}`);
       Persistencia.estados.forEach((valor) => {
-        const op = new Option(valor, valor, false, valor === req.estado);
-        selector.appendChild(op);
+        selector.appendChild(new Option(valor, valor, false, valor === req.estado));
       });
       selector.addEventListener("change", () => cambiarEstado(req.id, selector.value));
       celdaEstado.appendChild(selector);
       fila.appendChild(celdaEstado);
 
-      // Observaciones
       const celdaObs = document.createElement("td");
       const obs = document.createElement("input");
       obs.type = "text";
@@ -152,67 +259,71 @@
     });
   }
 
-  function renderSelectorRequisitos() {
-    el.ncRequisito.replaceChildren();
-    estado.requisitos.forEach((r) => {
-      el.ncRequisito.appendChild(new Option(`${r.codigo} · ${r.texto}`, r.id));
-    });
-  }
-
   function renderNoConformidades() {
-    el.listaNc.replaceChildren();
+    el.ncRequisito.replaceChildren(
+      ...estado.cumplimiento.map((r) => new Option(`${r.codigo} · ${r.texto}`, r.id))
+    );
+    el.ncRequisito.disabled = !estado.cumplimiento.length;
 
+    el.listaNc.replaceChildren();
     if (!estado.noConformidades.length) {
-      el.listaNc.appendChild(crear("li", "meta", "No hay no conformidades registradas."));
+      el.listaNc.appendChild(crear("li", "meta", "No hay no conformidades registradas para esta norma."));
       return;
     }
-
     estado.noConformidades.forEach((nc) => {
-      const req = estado.requisitos.find((r) => r.id === nc.requisitoId);
+      const req = estado.cumplimiento.find((r) => r.id === nc.requisitoId);
       const item = document.createElement("li");
       item.appendChild(crear("span", "titulo-nc", nc.descripcion));
-      item.appendChild(crear("span", "meta", `Requisito ${req ? req.codigo : "—"} · Acción: ${nc.accion || "sin definir"} · Límite: ${formatearFecha(nc.fechaLimite)}`));
+      item.appendChild(crear(
+        "span", "meta",
+        `Requisito ${req ? req.codigo : "—"} · Acción: ${nc.accion || "sin definir"} · Límite: ${formatearFecha(nc.fechaLimite)}`
+      ));
       el.listaNc.appendChild(item);
     });
   }
 
-  function renderTodo() {
+  function renderCumplimiento() {
     renderResumen();
-    renderTabla();
-    renderSelectorRequisitos();
+    renderTablaCumplimiento();
     renderNoConformidades();
   }
 
-  // ---------- Carga de datos ----------
-  async function cargarNormas() {
-    estado.normas = await Persistencia.obtenerNormas();
+  async function cargarNormasDelCliente() {
+    if (!estado.clienteId) return;
+    estado.normasCliente = await Persistencia.obtenerNormasDeCliente(estado.clienteId);
+
     el.selectorNorma.replaceChildren(
-      ...estado.normas.map((n) => new Option(n.nombre, n.id))
+      ...estado.normasCliente.map((n) => new Option(n.nombre, n.id))
     );
-    estado.normaId = estado.normas[0] ? estado.normas[0].id : null;
-    el.selectorNorma.value = estado.normaId;
-    await cargarNorma();
+    el.selectorNorma.disabled = !estado.normasCliente.length;
+
+    const sigueVigente = estado.normasCliente.some((n) => n.id === estado.normaId);
+    if (!sigueVigente) estado.normaId = estado.normasCliente[0] ? estado.normasCliente[0].id : null;
+    if (estado.normaId) el.selectorNorma.value = estado.normaId;
+
+    await cargarCumplimiento();
   }
 
-  async function cargarNorma() {
-    if (!estado.normaId) return;
-    const [requisitos, noConformidades] = await Promise.all([
-      Persistencia.obtenerRequisitos(estado.normaId),
-      Persistencia.obtenerNoConformidades(estado.normaId),
-    ]);
-    estado.requisitos = requisitos;
-    estado.noConformidades = noConformidades;
-    renderTodo();
+  async function cargarCumplimiento() {
+    if (estado.clienteId && estado.normaId) {
+      const [cumplimiento, noConformidades] = await Promise.all([
+        Persistencia.obtenerCumplimiento(estado.clienteId, estado.normaId),
+        Persistencia.obtenerNoConformidades(estado.clienteId, estado.normaId),
+      ]);
+      estado.cumplimiento = cumplimiento;
+      estado.noConformidades = noConformidades;
+    } else {
+      estado.cumplimiento = [];
+      estado.noConformidades = [];
+    }
+    renderCumplimiento();
   }
 
-  // ---------- Acciones ----------
   async function cambiarEstado(requisitoId, nuevoEstado) {
     try {
-      const actualizado = await Persistencia.guardarEvaluacion(requisitoId, { estado: nuevoEstado });
-      const req = estado.requisitos.find((r) => r.id === requisitoId);
-      if (req) Object.assign(req, actualizado);
+      const actualizado = await Persistencia.guardarEvaluacion(estado.clienteId, requisitoId, { estado: nuevoEstado });
+      Object.assign(estado.cumplimiento.find((r) => r.id === requisitoId), actualizado);
       renderResumen();
-      renderTabla();
       aviso("Estado actualizado");
     } catch (error) {
       aviso("No se pudo guardar el estado");
@@ -222,9 +333,10 @@
 
   async function guardarObservacion(requisitoId, texto) {
     try {
-      const actualizado = await Persistencia.guardarEvaluacion(requisitoId, { observaciones: texto.trim() });
-      const req = estado.requisitos.find((r) => r.id === requisitoId);
-      if (req) Object.assign(req, actualizado);
+      const actualizado = await Persistencia.guardarEvaluacion(estado.clienteId, requisitoId, {
+        observaciones: texto.trim(),
+      });
+      Object.assign(estado.cumplimiento.find((r) => r.id === requisitoId), actualizado);
       aviso("Observación guardada");
     } catch (error) {
       aviso("No se pudo guardar la observación");
@@ -232,7 +344,168 @@
     }
   }
 
-  // ---------- Eventos ----------
+  // ---------- Clientes ----------
+  async function cargarClientes() {
+    estado.clientes = await Persistencia.obtenerClientes();
+    const conteos = await Promise.all(
+      estado.clientes.map((c) => Persistencia.obtenerNormaIdsDeCliente(c.id))
+    );
+    estado.conteoNormas = {};
+    estado.clientes.forEach((c, i) => { estado.conteoNormas[c.id] = conteos[i].length; });
+
+    el.selectorCliente.replaceChildren(
+      ...estado.clientes.map((c) => new Option(c.nombre, c.id))
+    );
+    if (!estado.clienteId || !estado.clientes.some((c) => c.id === estado.clienteId)) {
+      estado.clienteId = estado.clientes[0] ? estado.clientes[0].id : null;
+    }
+    if (estado.clienteId) el.selectorCliente.value = estado.clienteId;
+  }
+
+  function renderClientes() {
+    el.tablaClientes.replaceChildren();
+
+    if (!estado.clientes.length) {
+      el.tablaClientes.appendChild(celdaVacia(6, "Todavía no hay clientes cargados."));
+      return;
+    }
+
+    estado.clientes.forEach((c) => {
+      const fila = document.createElement("tr");
+      fila.appendChild(crear("td", "texto-requisito", c.nombre));
+      fila.appendChild(crear("td", "codigo", c.rut));
+      fila.appendChild(crear("td", "", c.rubro));
+      fila.appendChild(crear("td", "", c.responsableCalidad));
+      fila.appendChild(crear("td", "", String(estado.conteoNormas[c.id] || 0)));
+
+      const celdaAccion = document.createElement("td");
+      const boton = crear("button", "boton-fantasma", "Normas");
+      boton.type = "button";
+      boton.addEventListener("click", () => abrirPanelNormas(c));
+      celdaAccion.appendChild(boton);
+      fila.appendChild(celdaAccion);
+
+      el.tablaClientes.appendChild(fila);
+    });
+  }
+
+  async function abrirPanelNormas(cliente) {
+    estado.clienteEditandoId = cliente.id;
+    el.tituloPanelCliente.textContent = `Normas de ${cliente.nombre}`;
+
+    const asociadas = new Set(await Persistencia.obtenerNormaIdsDeCliente(cliente.id));
+    el.listaNormasCheck.replaceChildren();
+
+    if (!estado.normas.length) {
+      el.listaNormasCheck.appendChild(crear("p", "ayuda", "Primero cargá normas en la pestaña Normas."));
+    }
+
+    estado.normas.forEach((n) => {
+      const etiqueta = document.createElement("label");
+      etiqueta.className = "opcion-check";
+      const casilla = document.createElement("input");
+      casilla.type = "checkbox";
+      casilla.value = n.id;
+      casilla.checked = asociadas.has(n.id);
+      etiqueta.appendChild(casilla);
+      etiqueta.appendChild(crear("span", "", n.version ? `${n.nombre} (${n.version})` : n.nombre));
+      el.listaNormasCheck.appendChild(etiqueta);
+    });
+
+    el.panelNormasCliente.classList.remove("oculto");
+    el.panelNormasCliente.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function cerrarPanelNormas() {
+    estado.clienteEditandoId = null;
+    el.panelNormasCliente.classList.add("oculto");
+  }
+
+  async function guardarNormasDelCliente() {
+    const seleccionadas = [...el.listaNormasCheck.querySelectorAll("input[type=checkbox]:checked")]
+      .map((c) => c.value);
+    const clienteId = estado.clienteEditandoId;
+
+    try {
+      await Persistencia.guardarNormasDeCliente(clienteId, seleccionadas);
+      cerrarPanelNormas();
+      await cargarClientes();
+      renderClientes();
+      aviso("Normas del cliente actualizadas");
+    } catch (error) {
+      aviso("No se pudieron guardar las normas");
+      console.error(error);
+    }
+  }
+
+  // ---------- Normas ----------
+  async function cargarNormas() {
+    estado.normas = await Persistencia.obtenerNormas();
+  }
+
+  function renderNormas() {
+    el.listaNormas.replaceChildren();
+
+    if (!estado.normas.length) {
+      el.listaNormas.appendChild(crear("li", "meta", "Todavía no hay normas cargadas."));
+    }
+
+    estado.normas.forEach((n) => {
+      const item = document.createElement("li");
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "norma-item";
+      if (n.id === estado.normaGestionId) boton.setAttribute("aria-current", "true");
+      boton.appendChild(crear("span", "titulo-nc", n.nombre));
+      boton.appendChild(crear("span", "meta", n.version ? `Versión ${n.version}` : "Sin versión"));
+      boton.addEventListener("click", () => abrirNorma(n.id));
+      item.appendChild(boton);
+      el.listaNormas.appendChild(item);
+    });
+
+    if (estado.normaGestionId) renderPanelNorma();
+  }
+
+  async function abrirNorma(normaId) {
+    estado.normaGestionId = normaId;
+    renderNormas();
+  }
+
+  async function renderPanelNorma() {
+    const norma = estado.normas.find((n) => n.id === estado.normaGestionId);
+    if (!norma) {
+      el.panelNorma.classList.add("oculto");
+      return;
+    }
+
+    el.tituloNorma.textContent = norma.nombre;
+    el.subtituloNorma.textContent = norma.version ? `Versión ${norma.version}` : "";
+    el.panelNorma.classList.remove("oculto");
+
+    const requisitos = await Persistencia.obtenerRequisitos(norma.id);
+    el.tablaRequisitosNorma.replaceChildren();
+
+    if (!requisitos.length) {
+      el.tablaRequisitosNorma.appendChild(celdaVacia(3, "Esta norma todavía no tiene requisitos."));
+      return;
+    }
+
+    requisitos.forEach((r) => {
+      const fila = document.createElement("tr");
+      fila.appendChild(crear("td", "codigo", r.codigo));
+      fila.appendChild(crear("td", "texto-requisito", r.texto));
+      fila.appendChild(crear("td", "", r.responsable));
+      el.tablaRequisitosNorma.appendChild(fila);
+    });
+  }
+
+  // ---------- Carga general ----------
+  async function cargarTodo() {
+    await Promise.all([cargarClientes(), cargarNormas()]);
+    mostrarVista(estado.vista);
+  }
+
+  // ---------- Eventos: acceso y navegación ----------
   el.formLogin.addEventListener("submit", async (evento) => {
     evento.preventDefault();
     el.loginError.textContent = "";
@@ -248,7 +521,7 @@
     estado.usuario = email;
     el.formLogin.reset();
     mostrarApp();
-    await cargarNormas();
+    await cargarTodo();
   });
 
   el.btnSalir.addEventListener("click", () => {
@@ -256,25 +529,37 @@
     mostrarLogin();
   });
 
-  el.selectorNorma.addEventListener("change", async () => {
-    estado.normaId = el.selectorNorma.value;
-    await cargarNorma();
+  el.navegacion.addEventListener("click", (evento) => {
+    const boton = evento.target.closest("button[data-vista]");
+    if (boton) mostrarVista(boton.dataset.vista);
   });
 
-  el.buscar.addEventListener("input", renderTabla);
+  // ---------- Eventos: cumplimiento ----------
+  el.selectorCliente.addEventListener("change", async () => {
+    estado.clienteId = el.selectorCliente.value;
+    estado.normaId = null;
+    await cargarNormasDelCliente();
+  });
+
+  el.selectorNorma.addEventListener("change", async () => {
+    estado.normaId = el.selectorNorma.value;
+    await cargarCumplimiento();
+  });
+
+  el.buscar.addEventListener("input", renderTablaCumplimiento);
 
   el.formNc.addEventListener("submit", async (evento) => {
     evento.preventDefault();
-    const nuevaNc = {
+    const nueva = {
       requisitoId: el.ncRequisito.value,
       descripcion: el.ncDescripcion.value.trim(),
       accion: el.ncAccion.value.trim(),
       fechaLimite: el.ncFecha.value,
     };
-    if (!nuevaNc.requisitoId || !nuevaNc.descripcion) return;
+    if (!nueva.requisitoId || !nueva.descripcion) return;
 
     try {
-      const creada = await Persistencia.registrarNoConformidad(nuevaNc);
+      const creada = await Persistencia.registrarNoConformidad(estado.clienteId, nueva);
       estado.noConformidades.push(creada);
       el.formNc.reset();
       renderNoConformidades();
@@ -282,6 +567,102 @@
       aviso("No conformidad registrada");
     } catch (error) {
       aviso("No se pudo registrar la no conformidad");
+      console.error(error);
+    }
+  });
+
+  // ---------- Eventos: clientes ----------
+  el.formCliente.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    const cliente = {
+      nombre: $("cli-nombre").value.trim(),
+      contacto: $("cli-contacto").value.trim(),
+      rut: $("cli-rut").value.trim(),
+      rubro: $("cli-rubro").value.trim(),
+      responsableCalidad: $("cli-responsable").value.trim(),
+    };
+
+    try {
+      const creado = await Persistencia.crearCliente(cliente);
+      el.formCliente.reset();
+      await cargarClientes();
+      estado.clienteId = creado.id;
+      renderClientes();
+      aviso("Cliente guardado. Ahora asociale sus normas.");
+      abrirPanelNormas(creado);
+    } catch (error) {
+      aviso("No se pudo guardar el cliente");
+      console.error(error);
+    }
+  });
+
+  el.btnGuardarNormas.addEventListener("click", guardarNormasDelCliente);
+  el.btnCancelarNormas.addEventListener("click", cerrarPanelNormas);
+
+  // ---------- Eventos: normas ----------
+  el.formNorma.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    try {
+      const creada = await Persistencia.crearNorma({
+        nombre: el.normaNombre.value.trim(),
+        version: el.normaVersion.value.trim(),
+      });
+      el.formNorma.reset();
+      await cargarNormas();
+      estado.normaGestionId = creada.id;
+      renderNormas();
+      aviso("Norma creada. Ahora agregá sus requisitos.");
+    } catch (error) {
+      aviso("No se pudo crear la norma");
+      console.error(error);
+    }
+  });
+
+  el.formImportar.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    el.importarError.textContent = "";
+
+    const archivo = el.importarArchivo.files[0];
+    if (!archivo) return;
+
+    try {
+      const requisitos = filasARequisitos(await leerFilas(archivo));
+      if (!requisitos.length) {
+        el.importarError.textContent = "No encontré requisitos. Revisá que tenga las columnas codigo, requisito y responsable.";
+        return;
+      }
+
+      const norma = await Persistencia.crearNorma({
+        nombre: el.importarNombre.value.trim(),
+        version: el.importarVersion.value.trim(),
+      });
+      await Persistencia.agregarRequisitos(norma.id, requisitos);
+
+      el.formImportar.reset();
+      await cargarNormas();
+      estado.normaGestionId = norma.id;
+      renderNormas();
+      aviso(`Se importaron ${requisitos.length} requisitos`);
+    } catch (error) {
+      el.importarError.textContent = error.message || "No se pudo leer el archivo.";
+      console.error(error);
+    }
+  });
+
+  el.formRequisito.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    if (!estado.normaGestionId) return;
+    try {
+      await Persistencia.agregarRequisitos(estado.normaGestionId, [{
+        codigo: el.reqCodigo.value.trim(),
+        texto: el.reqTexto.value.trim(),
+        responsable: el.reqResponsable.value.trim(),
+      }]);
+      el.formRequisito.reset();
+      renderPanelNorma();
+      aviso("Requisito agregado");
+    } catch (error) {
+      aviso("No se pudo agregar el requisito");
       console.error(error);
     }
   });
